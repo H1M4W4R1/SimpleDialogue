@@ -9,6 +9,7 @@ namespace Systems.SimpleDialogue.Implementations
     /// <summary>
     ///     Continues flow into another graph and returns through the node output when it finishes.
     /// </summary>
+    [Node.CreateNodeMenu("Sub Dialogue")]
     [NodeTint("#6A809F")]
     public sealed class SubDialogueNode : DialogueInteractionNode
     {

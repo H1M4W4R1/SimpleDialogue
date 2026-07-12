@@ -71,6 +71,88 @@ namespace Systems.SimpleDialogue.Tests
         }
 
         [Test]
+        public void Advance_WhenNpcNodesAreConnectedInSequence_EntersFollowingNpcNode()
+        {
+            DialogueGraph graph = CreateGraph();
+            DialogueEntryNode entry = graph.AddNode<DialogueEntryNode>();
+            TestNpcNode firstNpc = graph.AddNode<TestNpcNode>();
+            TestNpcNode secondNpc = graph.AddNode<TestNpcNode>();
+            firstNpc.Line = "First line.";
+            secondNpc.Line = "Second line.";
+            Connect(entry, nameof(DialogueEntryNode.next), firstNpc);
+            Connect(firstNpc, nameof(NPCDialogueNode.next), secondNpc);
+            Dialogue dialogue = CreateDialogue(graph, new TestRenderer());
+            dialogue.BeginDialogue();
+
+            OperationResult result = dialogue.Advance();
+
+            AssertSimilar(DialogueOperations.NodeEntered(), result);
+            Assert.AreSame(secondNpc, dialogue.CurrentNode);
+        }
+
+        [Test]
+        public void BeginDialogue_WhenConditionalNodeIsEntered_FollowsSelectedOutput()
+        {
+            DialogueGraph graph = CreateGraph();
+            DialogueEntryNode entry = graph.AddNode<DialogueEntryNode>();
+            TestConditionalNode conditional = graph.AddNode<TestConditionalNode>();
+            TestNpcNode trueNode = graph.AddNode<TestNpcNode>();
+            TestNpcNode falseNode = graph.AddNode<TestNpcNode>();
+            conditional.Condition = true;
+            Connect(entry, nameof(DialogueEntryNode.next), conditional);
+            Connect(conditional, nameof(ConditionalDialogueNode.whenTrue), trueNode);
+            Connect(conditional, nameof(ConditionalDialogueNode.whenFalse), falseNode);
+            Dialogue dialogue = CreateDialogue(graph, new TestRenderer());
+
+            OperationResult result = dialogue.BeginDialogue();
+
+            AssertSimilar(DialogueOperations.Started(), result);
+            Assert.AreSame(trueNode, dialogue.CurrentNode);
+        }
+
+        [Test]
+        public void BeginDialogue_WhenSwitchNodeIsEntered_FollowsEnumOutput()
+        {
+            DialogueGraph graph = CreateGraph();
+            DialogueEntryNode entry = graph.AddNode<DialogueEntryNode>();
+            TestSwitchNode switchNode = graph.AddNode<TestSwitchNode>();
+            TestNpcNode firstNode = graph.AddNode<TestNpcNode>();
+            TestNpcNode secondNode = graph.AddNode<TestNpcNode>();
+            switchNode.Route = TestDialogueRoute.Second;
+            Connect(entry, nameof(DialogueEntryNode.next), switchNode);
+            Connect(switchNode, nameof(TestDialogueRoute.First), firstNode);
+            Connect(switchNode, nameof(TestDialogueRoute.Second), secondNode);
+            Dialogue dialogue = CreateDialogue(graph, new TestRenderer());
+
+            OperationResult result = dialogue.BeginDialogue();
+
+            AssertSimilar(DialogueOperations.Started(), result);
+            Assert.AreSame(secondNode, dialogue.CurrentNode);
+        }
+
+        [Test]
+        public void BeginDialogue_WhenAnotherDialogueIsRunning_ReturnsAnotherDialogueRunning()
+        {
+            DialogueGraph firstGraph = CreateGraph();
+            DialogueEntryNode firstEntry = firstGraph.AddNode<DialogueEntryNode>();
+            TestNpcNode firstNpc = firstGraph.AddNode<TestNpcNode>();
+            Connect(firstEntry, nameof(DialogueEntryNode.next), firstNpc);
+            Dialogue firstDialogue = CreateDialogue(firstGraph, new TestRenderer());
+            firstDialogue.BeginDialogue();
+
+            DialogueGraph secondGraph = CreateGraph();
+            DialogueEntryNode secondEntry = secondGraph.AddNode<DialogueEntryNode>();
+            TestNpcNode secondNpc = secondGraph.AddNode<TestNpcNode>();
+            Connect(secondEntry, nameof(DialogueEntryNode.next), secondNpc);
+            Dialogue secondDialogue = CreateDialogue(secondGraph, new TestRenderer());
+
+            OperationResult result = secondDialogue.BeginDialogue();
+
+            AssertSimilar(DialogueOperations.AnotherDialogueRunning(), result);
+            Assert.IsFalse(secondDialogue.IsRunning);
+        }
+
+        [Test]
         public void SelectOption_WhenAnswerEndsBranch_FinishesDialogue()
         {
             DialogueGraph graph = CreateGraph();

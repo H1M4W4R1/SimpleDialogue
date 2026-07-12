@@ -13,7 +13,8 @@ namespace Systems.SimpleDialogue.Components
     /// <summary>
     ///     Runs a dialogue graph owned by this GameObject.
     /// </summary>
-    public sealed class Dialogue : MonoBehaviour
+    // ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
+    public class Dialogue : MonoBehaviour
     {
         public const string DEFAULT_ENTRY_ID = "default";
 
@@ -24,6 +25,7 @@ namespace Systems.SimpleDialogue.Components
         [CanBeNull] private IDialogueRenderer _renderer;
         [CanBeNull] private DialogueInteractionNode _currentNode;
         [CanBeNull] private DialogueGraph _currentGraph;
+        [CanBeNull] private static Dialogue _activeDialogue;
         [NotNull] private readonly List<DialogueOption> _options = new();
         [NotNull] private DialogueViewContext _viewContext = null!; // Not null, as assigned in Awake
 
@@ -46,16 +48,21 @@ namespace Systems.SimpleDialogue.Components
             if (!Graph) return FailStart(DialogueOperations.GraphIsNull(), actionSource);
 
             DialogueInteractionNode startNode = Graph.GetStartNode(entryId);
-            if (ReferenceEquals(startNode, null)) return FailStart(DialogueOperations.EntryNotFound(), actionSource);
+            if (ReferenceEquals(startNode, null))
+                return FailStart(DialogueOperations.EntryNotFound(), actionSource);
+            if (IsAnotherDialogueRunning())
+                return FailStart(DialogueOperations.AnotherDialogueRunning(), actionSource);
 
             _currentGraph = Graph;
             IsRunning = true;
+            _activeDialogue = this;
 
             OperationResult enterResult = EnterNode(startNode, actionSource);
             if (!enterResult)
             {
                 IsRunning = false;
                 _currentGraph = null;
+                ClearActiveDialogue();
                 return enterResult;
             }
 
@@ -78,6 +85,7 @@ namespace Systems.SimpleDialogue.Components
             if (!IsRunning) return DialogueOperations.DialogueNotRunning();
 
             IsRunning = false;
+            ClearActiveDialogue();
             OperationResult result = DialogueOperations.Interrupted();
             ClearRuntimeState();
 
@@ -93,7 +101,8 @@ namespace Systems.SimpleDialogue.Components
             if (!IsRunning) return DialogueOperations.DialogueNotRunning();
             if (!option.IsValid) return DialogueOperations.OptionNotFound();
             if (option.index < 0 || option.index >= _options.Count) return DialogueOperations.OptionNotFound();
-            if (!ReferenceEquals(_options[option.index].node, option.node)) return DialogueOperations.OptionNotFound();
+            if (!ReferenceEquals(_options[option.index].node, option.node))
+                return DialogueOperations.OptionNotFound();
             if (!option.isAvailable) return DialogueOperations.OptionUnavailable();
 
             DialogueContext context = CreateContext(option.node, in option, actionSource);
@@ -117,9 +126,17 @@ namespace Systems.SimpleDialogue.Components
         {
             if (!IsRunning) return DialogueOperations.DialogueNotRunning();
             if (_options.Count > 0) return DialogueOperations.OptionUnavailable();
-            if (_currentNode is DialogueExitNode) return FinishDialogue(actionSource);
+            if (_currentNode is not NPCDialogueNode npcNode) return DialogueOperations.OptionNotFound();
 
-            return DialogueOperations.OptionNotFound();
+            DialogueInteractionNode nextNode = npcNode.GetNextNode();
+            if (ReferenceEquals(nextNode, null)) return FinishDialogue(actionSource);
+
+            DialogueOption emptyOption = default;
+            DialogueContext context = CreateContext(nextNode, in emptyOption, actionSource);
+            OperationResult advancedResult = DialogueOperations.NodeEntered();
+            npcNode.OnNodeExited(in context, in advancedResult);
+
+            return EnterNode(nextNode, actionSource);
         }
 
         private OperationResult EnterNode(
@@ -141,6 +158,10 @@ namespace Systems.SimpleDialogue.Components
             _currentGraph = node.graph as DialogueGraph;
 
             if (node is DialogueExitNode) return FinishDialogue(actionSource);
+            if (node is ConditionalDialogueNode conditionalNode)
+                return EnterNode(conditionalNode.GetNextNode(in context), actionSource);
+            if (node is SwitchDialogueNode switchNode)
+                return EnterNode(switchNode.GetNextNode(in context), actionSource);
             if (node is SubDialogueNode subDialogueNode && subDialogueNode.Graph)
             {
                 DialogueInteractionNode subStartNode = subDialogueNode.Graph.GetStartNode(subDialogueNode.EntryId);
@@ -157,6 +178,7 @@ namespace Systems.SimpleDialogue.Components
         private OperationResult FinishDialogue(ActionSource actionSource)
         {
             IsRunning = false;
+            ClearActiveDialogue();
             OperationResult result = DialogueOperations.Finished();
             ClearRuntimeState();
 
@@ -245,35 +267,56 @@ namespace Systems.SimpleDialogue.Components
             _viewContext.Set(this, null, null, string.Empty, string.Empty, false);
         }
 
-        private void OnDialogueStarted(in OperationResult result)
+        private bool IsAnotherDialogueRunning()
+        {
+            if (ReferenceEquals(_activeDialogue, null)) return false;
+            if (!_activeDialogue || !_activeDialogue.IsRunning)
+            {
+                _activeDialogue = null;
+                return false;
+            }
+
+            return !ReferenceEquals(_activeDialogue, this);
+        }
+
+        private void ClearActiveDialogue()
+        {
+            if (ReferenceEquals(_activeDialogue, this)) _activeDialogue = null;
+        }
+
+        protected virtual void OnDialogueStarted(in OperationResult result)
         {
         }
 
-        private void OnDialogueStartFailed(in OperationResult result)
+        protected virtual void OnDialogueStartFailed(in OperationResult result)
         {
         }
 
-        private void OnDialogueFinished(in OperationResult result)
+        protected virtual void OnDialogueFinished(in OperationResult result)
         {
         }
 
-        private void OnDialogueInterrupted(in OperationResult result)
+        protected virtual void OnDialogueInterrupted(in OperationResult result)
         {
         }
 
         private void Awake()
         {
             _viewContext = new DialogueViewContext(_options);
-            _renderer = FindRenderer();
+            _renderer = FindRendererInScene();
         }
 
-        [CanBeNull] private IDialogueRenderer FindRenderer()
+        private void OnDestroy()
         {
-            MonoBehaviour[] behaviours = GetComponentsInChildren<MonoBehaviour>(includeInactive: true);
-            for (int behaviourIndex = 0; behaviourIndex < behaviours.Length; behaviourIndex++)
+            ClearActiveDialogue();
+        }
+
+        [CanBeNull] private IDialogueRenderer FindRendererInScene()
+        {
+            Object[] candidates = FindObjectsByType(typeof(MonoBehaviour));
+            for (int nCandidate = 0; nCandidate < candidates.Length; nCandidate++)
             {
-                if (behaviours[behaviourIndex] is not IDialogueRenderer) continue;
-                return behaviours[behaviourIndex] as IDialogueRenderer;
+                if (candidates[nCandidate] is IDialogueRenderer renderer)  return renderer;
             }
 
             return null;

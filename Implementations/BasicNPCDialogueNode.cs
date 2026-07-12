@@ -1,13 +1,15 @@
 using Systems.SimpleDialogue.Abstract;
 using Systems.SimpleDialogue.Data;
 using UnityEngine;
+using XNode;
 
 namespace Systems.SimpleDialogue.Implementations
 {
     /// <summary>
     ///     Built-in NPC dialogue node with inspector-authored speaker and text.
     /// </summary>
-    public sealed class SimpleNPCDialogueNode : NPCDialogueNode
+    [Node.CreateNodeMenu("Basic NPC Dialogue")]
+    public sealed class BasicNPCDialogueNode : NPCDialogueNode
     {
         [SerializeField] private string _speakerName = string.Empty;
 

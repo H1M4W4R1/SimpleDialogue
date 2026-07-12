@@ -23,6 +23,7 @@ namespace Systems.SimpleDialogue.Operations
         public const ushort ERROR_OPTION_UNAVAILABLE = OperationResult.USER_SPACE_START + 6;
         public const ushort ERROR_DIALOGUE_NOT_RUNNING = OperationResult.USER_SPACE_START + 7;
         public const ushort ERROR_RENDERER_INVALID = OperationResult.USER_SPACE_START + 8;
+        public const ushort ERROR_ANOTHER_DIALOGUE_RUNNING = OperationResult.USER_SPACE_START + 9;
 
         public static OperationResult Permitted() =>
             OperationResult.Success(SYSTEM_DIALOGUE, OperationResult.SUCCESS_PERMITTED);
@@ -65,5 +66,8 @@ namespace Systems.SimpleDialogue.Operations
 
         public static OperationResult RendererInvalid() =>
             OperationResult.Error(SYSTEM_DIALOGUE, ERROR_RENDERER_INVALID);
+
+        public static OperationResult AnotherDialogueRunning() =>
+            OperationResult.Error(SYSTEM_DIALOGUE, ERROR_ANOTHER_DIALOGUE_RUNNING);
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using NUnit.Framework;
 using Systems.SimpleCore.Operations;
@@ -11,17 +12,33 @@ namespace Systems.SimpleDialogue.Tests
 {
     public abstract class SimpleDialogueTestBase
     {
-        protected static Dialogue CreateDialogue(DialogueGraph graph, [CanBeNull] IDialogueRenderer renderer = null)
+        [NotNull] private readonly List<Object> _createdObjects = new();
+
+        protected Dialogue CreateDialogue(DialogueGraph graph, [CanBeNull] IDialogueRenderer renderer = null)
         {
             GameObject gameObject = new("Dialogue Test");
+            _createdObjects.Add(gameObject);
             Dialogue dialogue = gameObject.AddComponent<Dialogue>();
             dialogue.InitializeForTests(graph, renderer);
             return dialogue;
         }
 
-        protected static DialogueGraph CreateGraph()
+        protected DialogueGraph CreateGraph()
         {
-            return ScriptableObject.CreateInstance<DialogueGraph>();
+            DialogueGraph graph = ScriptableObject.CreateInstance<DialogueGraph>();
+            _createdObjects.Add(graph);
+            return graph;
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            for (int objectIndex = _createdObjects.Count - 1; objectIndex >= 0; objectIndex--)
+            {
+                Object.DestroyImmediate(_createdObjects[objectIndex]);
+            }
+
+            _createdObjects.Clear();
         }
 
         protected static void AssertSimilar(OperationResult expected, OperationResult actual)

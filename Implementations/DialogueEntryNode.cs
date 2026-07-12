@@ -9,6 +9,7 @@ namespace Systems.SimpleDialogue.Implementations
     /// <summary>
     ///     Entry point for a dialogue graph.
     /// </summary>
+    [Node.CreateNodeMenu("Entry")]
     [NodeTint("#7C6AA6")]
     public sealed class DialogueEntryNode : DialogueInteractionNode
     {

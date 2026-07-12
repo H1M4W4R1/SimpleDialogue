@@ -27,10 +27,12 @@ Create a graph through `Assets > Create > Simple Dialogue > Dialogue Graph`.
 The built-in nodes are:
 
 - `DialogueEntryNode`: named graph entry point. The default entry id is `default`.
-- `SimpleNPCDialogueNode`: an NPC line with answer outputs.
-- `SimplePlayerDialogueNode`: a player answer with a single next output.
+- `BasicNPCDialogueNode`: an NPC line with player-answer outputs and an optional `next` output for NPC-only sequences.
+- `BasicPlayerDialogueNode`: a player answer with a single next output.
 - `DialogueExitNode`: ends the active dialogue.
 - `SubDialogueNode`: enters another graph and entry id.
+
+The graph menu uses clear `Dialogue/...` paths and only shows concrete `DialogueInteractionNode` implementations, so nodes from other xNode graph types cannot be added accidentally.
 
 Custom dialogue nodes inherit from `NPCDialogueNode`, `PlayerDialogueNode`, or `DialogueInteractionNode`. Provide text through methods, not base fields:
 
@@ -46,7 +48,9 @@ protected internal override string GetText(in DialogueContext context)
 }
 ```
 
-Use `IsVisible`, `IsAvailable`, and `CanEnter` for conditions. Invisible answers are not rendered; unavailable answers are rendered disabled.
+Use `IsVisible`, `IsAvailable`, and `CanEnter` for entry conditions. Invisible answers are not rendered; unavailable answers are rendered disabled.
+
+For non-rendered graph flow, derive from `ConditionalDialogueNode` and implement `EvaluateCondition`. Its `whenTrue` and `whenFalse` ports act as an `if` branch. To branch by an enum, derive from `SwitchDialogueNode<TEnum>` and implement `GetSwitchValue`; every enum member automatically becomes an output port, with `otherwise` as a fallback.
 
 ## Running Dialogue
 
@@ -62,6 +66,14 @@ To select an answer:
 DialogueOption option = dialogue.Options[0];
 OperationResult result = DialogueAPI.Select(in option);
 ```
+
+For an NPC line without answer options, connect its `next` port to the following NPC node and call `Advance` after the player interacts:
+
+```csharp
+OperationResult result = dialogue.Advance();
+```
+
+Only one dialogue may run at a time. Starting another dialogue while one is active returns `DialogueOperations.AnotherDialogueRunning()`.
 
 `Dialogue` automatically finds the first `IDialogueRenderer` on itself or inactive/active children. No renderer field is serialized on the runner.
 

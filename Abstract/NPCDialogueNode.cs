@@ -12,6 +12,9 @@ namespace Systems.SimpleDialogue.Abstract
         [Output(ShowBackingValue.Never, ConnectionType.Multiple, TypeConstraint.Strict)]
         public DialogueConnection answers;
 
+        [Output(ShowBackingValue.Never, ConnectionType.Override, TypeConstraint.Strict)]
+        public DialogueConnection next;
+
         public int AnswerCount
         {
             get
@@ -31,6 +34,20 @@ namespace Systems.SimpleDialogue.Abstract
             if (ReferenceEquals(connectedPort, null)) return null;
 
             return connectedPort.node as PlayerDialogueNode;
+        }
+
+        /// <summary>
+        ///     Gets the next node for an NPC-only sequence.
+        /// </summary>
+        [CanBeNull] public DialogueInteractionNode GetNextNode()
+        {
+            NodePort port = GetOutputPort(nameof(next));
+            if (ReferenceEquals(port, null)) return null;
+
+            NodePort connectedPort = port.Connection;
+            if (ReferenceEquals(connectedPort, null)) return null;
+
+            return connectedPort.node as DialogueInteractionNode;
         }
     }
 }

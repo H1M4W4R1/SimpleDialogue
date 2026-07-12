@@ -5,6 +5,27 @@ using Systems.SimpleDialogue.Operations;
 
 namespace Systems.SimpleDialogue.Tests
 {
+    public enum TestDialogueRoute
+    {
+        First,
+        Second,
+        Unconnected
+    }
+
+    public sealed class TestConditionalNode : ConditionalDialogueNode
+    {
+        public bool Condition;
+
+        protected internal override bool EvaluateCondition(in DialogueContext context) => Condition;
+    }
+
+    public sealed class TestSwitchNode : SwitchDialogueNode<TestDialogueRoute>
+    {
+        public TestDialogueRoute Route;
+
+        protected internal override TestDialogueRoute GetSwitchValue(in DialogueContext context) => Route;
+    }
+
     public sealed class TestNpcNode : NPCDialogueNode
     {
         public string Speaker = string.Empty;
