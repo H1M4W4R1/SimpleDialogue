@@ -62,6 +62,7 @@ MonoBehaviour:
     keys:
     - answers
     - input
+    - next
     values:
     - _fieldName: answers
       _node: {fileID: -6401454082097923717}
@@ -87,8 +88,72 @@ MonoBehaviour:
       _connectionType: 0
       _typeConstraint: 2
       _dynamic: 0
+    - _fieldName: next
+      _node: {fileID: -6401454082097923717}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections: []
+      _direction: 1
+      _connectionType: 1
+      _typeConstraint: 2
+      _dynamic: 0
   _speakerName: World
   _text: Hi John!
+--- !u!114 &-6058575136006248883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56b0fb1af4c04f2caa121c73c13ebaa8, type: 3}
+  m_Name: Simple NPC Dialogue
+  m_EditorClassIdentifier: SimpleDialogue::Systems.SimpleDialogue.Implementations.SimpleNPCDialogueNode
+  graph: {fileID: 11400000}
+  position: {x: -488, y: 216}
+  ports:
+    keys:
+    - answers
+    - input
+    - next
+    values:
+    - _fieldName: answers
+      _node: {fileID: -6058575136006248883}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections: []
+      _direction: 1
+      _connectionType: 0
+      _typeConstraint: 2
+      _dynamic: 0
+    - _fieldName: input
+      _node: {fileID: -6058575136006248883}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections:
+      - fieldName: next
+        node: {fileID: 2966936861852567466}
+        reroutePoints: []
+      _direction: 0
+      _connectionType: 0
+      _typeConstraint: 2
+      _dynamic: 0
+    - _fieldName: next
+      _node: {fileID: -6058575136006248883}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections:
+      - fieldName: input
+        node: {fileID: -1917004769267357326}
+        reroutePoints: []
+      _direction: 1
+      _connectionType: 1
+      _typeConstraint: 2
+      _dynamic: 0
+  _speakerName: World
+  _text: This is world.
 --- !u!114 &-5014905649377732419
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107,6 +172,7 @@ MonoBehaviour:
     keys:
     - answers
     - input
+    - next
     values:
     - _fieldName: answers
       _node: {fileID: -5014905649377732419}
@@ -132,6 +198,15 @@ MonoBehaviour:
       _connectionType: 0
       _typeConstraint: 2
       _dynamic: 0
+    - _fieldName: next
+      _node: {fileID: -5014905649377732419}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections: []
+      _direction: 1
+      _connectionType: 1
+      _typeConstraint: 2
+      _dynamic: 0
   _speakerName: World
   _text: Hi Jack!
 --- !u!114 &-4697910633746140574
@@ -152,6 +227,7 @@ MonoBehaviour:
     keys:
     - answers
     - input
+    - next
     values:
     - _fieldName: answers
       _node: {fileID: -4697910633746140574}
@@ -175,6 +251,15 @@ MonoBehaviour:
         reroutePoints: []
       _direction: 0
       _connectionType: 0
+      _typeConstraint: 2
+      _dynamic: 0
+    - _fieldName: next
+      _node: {fileID: -4697910633746140574}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections: []
+      _direction: 1
+      _connectionType: 1
       _typeConstraint: 2
       _dynamic: 0
   _speakerName: World
@@ -271,6 +356,7 @@ MonoBehaviour:
     keys:
     - answers
     - input
+    - next
     values:
     - _fieldName: answers
       _node: {fileID: -1917004769267357326}
@@ -302,10 +388,19 @@ MonoBehaviour:
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       connections:
       - fieldName: next
-        node: {fileID: 2966936861852567466}
+        node: {fileID: -6058575136006248883}
         reroutePoints: []
       _direction: 0
       _connectionType: 0
+      _typeConstraint: 2
+      _dynamic: 0
+    - _fieldName: next
+      _node: {fileID: -1917004769267357326}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections: []
+      _direction: 1
+      _connectionType: 1
       _typeConstraint: 2
       _dynamic: 0
   _speakerName: World
@@ -381,6 +476,7 @@ MonoBehaviour:
   - {fileID: 4590792090544762305}
   - {fileID: 7794921804950529968}
   - {fileID: 1281781259432470091}
+  - {fileID: -6058575136006248883}
 --- !u!114 &143119437541908325
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -477,7 +573,7 @@ MonoBehaviour:
   m_Name: Dialogue Entry
   m_EditorClassIdentifier: SimpleDialogue::Systems.SimpleDialogue.Implementations.DialogueEntryNode
   graph: {fileID: 11400000}
-  position: {x: -520, y: 168}
+  position: {x: -712, y: 200}
   ports:
     keys:
     - next
@@ -489,7 +585,7 @@ MonoBehaviour:
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       connections:
       - fieldName: input
-        node: {fileID: -1917004769267357326}
+        node: {fileID: -6058575136006248883}
         reroutePoints: []
       _direction: 1
       _connectionType: 1
@@ -523,6 +619,7 @@ MonoBehaviour:
     keys:
     - answers
     - input
+    - next
     values:
     - _fieldName: answers
       _node: {fileID: 4590792090544762305}
@@ -546,6 +643,15 @@ MonoBehaviour:
         reroutePoints: []
       _direction: 0
       _connectionType: 0
+      _typeConstraint: 2
+      _dynamic: 0
+    - _fieldName: next
+      _node: {fileID: 4590792090544762305}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections: []
+      _direction: 1
+      _connectionType: 1
       _typeConstraint: 2
       _dynamic: 0
   _speakerName: World

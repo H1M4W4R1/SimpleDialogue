@@ -1,8 +1,10 @@
+using Systems.SimpleCore.Utility.Enums;
 using Systems.SimpleDialogue.Abstract;
 using Systems.SimpleDialogue.Data;
 using Systems.SimpleUI.Components.Panels;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.UI;
 
 namespace Systems.SimpleDialogue.UI
 {
@@ -14,6 +16,7 @@ namespace Systems.SimpleDialogue.UI
         [SerializeField] private SimpleDialogueText _speakerText;
         [SerializeField] private SimpleDialogueText _bodyText;
         [SerializeField] private SimpleDialogueAnswerContainer _answerContainer;
+        [SerializeField] private Button _continueButton;
 
         public void RenderDialogue(DialogueViewContext context)
         {
@@ -22,6 +25,11 @@ namespace Systems.SimpleDialogue.UI
             _speakerText.SetText(context.SpeakerName);
             _bodyText.SetText(context.Text);
             _answerContainer.SetOptions(context.OptionsContext);
+            
+            _continueButton.gameObject.SetActive(context.CanAdvance);
+            if (!context.CanAdvance || ReferenceEquals(context.Dialogue, null)) return;
+            _continueButton.onClick.RemoveAllListeners();
+            _continueButton.onClick.AddListener(() => context.Dialogue.Advance(ActionSource.External));
         }
 
         public void ClearDialogue()
