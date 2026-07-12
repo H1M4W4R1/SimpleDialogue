@@ -1,0 +1,289 @@
+using System.Collections.Generic;
+using JetBrains.Annotations;
+using Systems.SimpleCore.Operations;
+using Systems.SimpleCore.Utility.Enums;
+using Systems.SimpleDialogue.Abstract;
+using Systems.SimpleDialogue.Data;
+using Systems.SimpleDialogue.Implementations;
+using Systems.SimpleDialogue.Operations;
+using UnityEngine;
+
+namespace Systems.SimpleDialogue.Components
+{
+    /// <summary>
+    ///     Runs a dialogue graph owned by this GameObject.
+    /// </summary>
+    public class Dialogue : MonoBehaviour
+    {
+        public const string DEFAULT_ENTRY_ID = "default";
+
+        [field: SerializeField] public DialogueGraph Graph { get; private set; }
+
+        [field: SerializeField] public string DefaultEntryId { get; private set; } = DEFAULT_ENTRY_ID;
+
+        [CanBeNull] private IDialogueRenderer _renderer;
+        [CanBeNull] private DialogueInteractionNode _currentNode;
+        [CanBeNull] private DialogueGraph _currentGraph;
+        [NotNull] private readonly List<DialogueOption> _options = new();
+        [NotNull] private DialogueViewContext _viewContext;
+
+        public DialogueInteractionNode CurrentNode => _currentNode;
+
+        public DialogueGraph CurrentGraph => _currentGraph;
+
+        public DialogueViewContext ViewContext => _viewContext;
+
+        public IReadOnlyList<DialogueOption> Options => _options;
+
+        public bool IsRunning { get; private set; }
+
+        public OperationResult BeginDialogue() => BeginDialogue(DefaultEntryId, ActionSource.External);
+
+        public OperationResult BeginDialogue(
+            string entryId,
+            ActionSource actionSource = ActionSource.External)
+        {
+            if (!Graph) return FailStart(DialogueOperations.GraphIsNull(), actionSource);
+
+            DialogueInteractionNode startNode = Graph.GetStartNode(entryId);
+            if (ReferenceEquals(startNode, null)) return FailStart(DialogueOperations.EntryNotFound(), actionSource);
+
+            _currentGraph = Graph;
+            IsRunning = true;
+
+            OperationResult enterResult = EnterNode(startNode, actionSource);
+            if (!enterResult)
+            {
+                IsRunning = false;
+                _currentGraph = null;
+                return enterResult;
+            }
+
+            OperationResult result = DialogueOperations.Started();
+            if (actionSource == ActionSource.External) OnDialogueStarted(in result);
+            return result;
+        }
+
+        public OperationResult RecoverDialogue(ActionSource actionSource = ActionSource.External)
+        {
+            if (!IsRunning) return BeginDialogue(DefaultEntryId, actionSource);
+            if (ReferenceEquals(_currentNode, null)) return BeginDialogue(DefaultEntryId, actionSource);
+
+            RefreshView(actionSource);
+            return DialogueOperations.NodeEntered();
+        }
+
+        public OperationResult InterruptDialogue(ActionSource actionSource = ActionSource.External)
+        {
+            if (!IsRunning) return DialogueOperations.DialogueNotRunning();
+
+            IsRunning = false;
+            OperationResult result = DialogueOperations.Interrupted();
+            ClearRuntimeState();
+
+            if (actionSource == ActionSource.External) OnDialogueInterrupted(in result);
+            RenderCurrentState();
+            return result;
+        }
+
+        public OperationResult SelectOption(
+            in DialogueOption option,
+            ActionSource actionSource = ActionSource.External)
+        {
+            if (!IsRunning) return DialogueOperations.DialogueNotRunning();
+            if (!option.IsValid) return DialogueOperations.OptionNotFound();
+            if (option.index < 0 || option.index >= _options.Count) return DialogueOperations.OptionNotFound();
+            if (!ReferenceEquals(_options[option.index].node, option.node)) return DialogueOperations.OptionNotFound();
+            if (!option.isAvailable) return DialogueOperations.OptionUnavailable();
+
+            DialogueContext context = CreateContext(option.node, in option, actionSource);
+            OperationResult canEnterResult = option.node.CanEnterInternal(in context);
+            if (!canEnterResult)
+            {
+                option.node.OnNodeEnterFailed(in context, in canEnterResult);
+                return canEnterResult;
+            }
+
+            OperationResult selectedResult = DialogueOperations.OptionSelected();
+            if (!ReferenceEquals(_currentNode, null)) _currentNode.OnNodeExited(in context, in selectedResult);
+
+            DialogueInteractionNode nextNode = option.node.GetNextNode();
+            if (ReferenceEquals(nextNode, null)) return FinishDialogue(actionSource);
+
+            return EnterNode(nextNode, actionSource);
+        }
+
+        public OperationResult Advance(ActionSource actionSource = ActionSource.External)
+        {
+            if (!IsRunning) return DialogueOperations.DialogueNotRunning();
+            if (_options.Count > 0) return DialogueOperations.OptionUnavailable();
+            if (_currentNode is DialogueExitNode) return FinishDialogue(actionSource);
+
+            return DialogueOperations.OptionNotFound();
+        }
+
+        private OperationResult EnterNode(
+            [CanBeNull] DialogueInteractionNode node,
+            ActionSource actionSource)
+        {
+            if (ReferenceEquals(node, null)) return DialogueOperations.NodeIsNull();
+
+            DialogueOption emptyOption = default;
+            DialogueContext context = CreateContext(node, in emptyOption, actionSource);
+            OperationResult result = node.CanEnterInternal(in context);
+            if (!result)
+            {
+                node.OnNodeEnterFailed(in context, in result);
+                return result;
+            }
+
+            _currentNode = node;
+            _currentGraph = node.graph as DialogueGraph;
+
+            if (node is DialogueExitNode) return FinishDialogue(actionSource);
+            if (node is SubDialogueNode subDialogueNode && subDialogueNode.Graph)
+            {
+                DialogueInteractionNode subStartNode = subDialogueNode.Graph.GetStartNode(subDialogueNode.EntryId);
+                if (ReferenceEquals(subStartNode, null)) return DialogueOperations.EntryNotFound();
+                return EnterNode(subStartNode, actionSource);
+            }
+
+            RefreshView(actionSource);
+            OperationResult enteredResult = DialogueOperations.NodeEntered();
+            node.OnNodeEntered(in context, in enteredResult);
+            return enteredResult;
+        }
+
+        private OperationResult FinishDialogue(ActionSource actionSource)
+        {
+            IsRunning = false;
+            OperationResult result = DialogueOperations.Finished();
+            ClearRuntimeState();
+
+            if (actionSource == ActionSource.External) OnDialogueFinished(in result);
+            RenderCurrentState();
+            return result;
+        }
+
+        private OperationResult FailStart(in OperationResult result, ActionSource actionSource)
+        {
+            if (actionSource == ActionSource.External) OnDialogueStartFailed(in result);
+            return result;
+        }
+
+        private void RefreshView(ActionSource actionSource)
+        {
+            RebuildOptions(actionSource);
+
+            string speakerName = string.Empty;
+            string text = string.Empty;
+            if (!ReferenceEquals(_currentNode, null))
+            {
+                DialogueOption emptyOption = default;
+                DialogueContext context = CreateContext(_currentNode, in emptyOption, actionSource);
+                speakerName = _currentNode.GetSpeakerName(in context);
+                text = _currentNode.GetText(in context);
+            }
+
+            _viewContext.Set(this, _currentGraph, _currentNode, speakerName, text, IsRunning);
+            RenderCurrentState();
+        }
+
+        private void RebuildOptions(ActionSource actionSource)
+        {
+            _options.Clear();
+            if (_currentNode is not NPCDialogueNode npcNode) return;
+
+            int answerCount = npcNode.AnswerCount;
+            for (int optionIndex = 0; optionIndex < answerCount; optionIndex++)
+            {
+                PlayerDialogueNode answerNode = npcNode.GetAnswerNode(optionIndex);
+                if (ReferenceEquals(answerNode, null)) continue;
+
+                DialogueOption emptyOption = default;
+                DialogueContext context = CreateContext(answerNode, in emptyOption, actionSource);
+                if (!answerNode.IsVisible(in context)) continue;
+
+                bool isAvailable = answerNode.IsAvailable(in context) && answerNode.CanEnterInternal(in context);
+                string text = answerNode.GetText(in context);
+                _options.Add(new DialogueOption(this, answerNode, _options.Count, text, isAvailable));
+            }
+        }
+
+        private DialogueContext CreateContext(
+            [CanBeNull] DialogueInteractionNode targetNode,
+            in DialogueOption selectedOption,
+            ActionSource actionSource)
+        {
+            return new DialogueContext(
+                this,
+                _currentGraph,
+                _currentNode,
+                targetNode,
+                in selectedOption,
+                actionSource);
+        }
+
+        private void RenderCurrentState()
+        {
+            if (ReferenceEquals(_renderer, null)) return;
+
+            if (IsRunning)
+            {
+                _renderer.RenderDialogue(_viewContext);
+                return;
+            }
+
+            _renderer.ClearDialogue();
+        }
+
+        private void ClearRuntimeState()
+        {
+            _options.Clear();
+            _currentNode = null;
+            _currentGraph = null;
+            _viewContext.Set(this, null, null, string.Empty, string.Empty, false);
+        }
+
+        protected virtual void OnDialogueStarted(in OperationResult result)
+        {
+        }
+
+        protected virtual void OnDialogueStartFailed(in OperationResult result)
+        {
+        }
+
+        protected virtual void OnDialogueFinished(in OperationResult result)
+        {
+        }
+
+        protected virtual void OnDialogueInterrupted(in OperationResult result)
+        {
+        }
+
+        private void Awake()
+        {
+            _viewContext = new DialogueViewContext(_options);
+            _renderer = FindRenderer();
+        }
+
+        [CanBeNull] private IDialogueRenderer FindRenderer()
+        {
+            MonoBehaviour[] behaviours = GetComponentsInChildren<MonoBehaviour>(includeInactive: true);
+            for (int behaviourIndex = 0; behaviourIndex < behaviours.Length; behaviourIndex++)
+            {
+                if (behaviours[behaviourIndex] is not IDialogueRenderer) continue;
+                return behaviours[behaviourIndex] as IDialogueRenderer;
+            }
+
+            return null;
+        }
+
+        internal void InitializeForTests(DialogueGraph graph, IDialogueRenderer renderer = null)
+        {
+            Graph = graph;
+            _viewContext = new DialogueViewContext(_options);
+            _renderer = renderer;
+        }
+    }
+}
