@@ -13,7 +13,7 @@ namespace Systems.SimpleDialogue.Components
     /// <summary>
     ///     Runs a dialogue graph owned by this GameObject.
     /// </summary>
-    public class Dialogue : MonoBehaviour
+    public sealed class Dialogue : MonoBehaviour
     {
         public const string DEFAULT_ENTRY_ID = "default";
 
@@ -25,11 +25,11 @@ namespace Systems.SimpleDialogue.Components
         [CanBeNull] private DialogueInteractionNode _currentNode;
         [CanBeNull] private DialogueGraph _currentGraph;
         [NotNull] private readonly List<DialogueOption> _options = new();
-        [NotNull] private DialogueViewContext _viewContext;
+        [NotNull] private DialogueViewContext _viewContext = null!; // Not null, as assigned in Awake
 
-        public DialogueInteractionNode CurrentNode => _currentNode;
+        [CanBeNull] public DialogueInteractionNode CurrentNode => _currentNode;
 
-        public DialogueGraph CurrentGraph => _currentGraph;
+        [CanBeNull] public DialogueGraph CurrentGraph => _currentGraph;
 
         public DialogueViewContext ViewContext => _viewContext;
 
@@ -245,19 +245,19 @@ namespace Systems.SimpleDialogue.Components
             _viewContext.Set(this, null, null, string.Empty, string.Empty, false);
         }
 
-        protected virtual void OnDialogueStarted(in OperationResult result)
+        private void OnDialogueStarted(in OperationResult result)
         {
         }
 
-        protected virtual void OnDialogueStartFailed(in OperationResult result)
+        private void OnDialogueStartFailed(in OperationResult result)
         {
         }
 
-        protected virtual void OnDialogueFinished(in OperationResult result)
+        private void OnDialogueFinished(in OperationResult result)
         {
         }
 
-        protected virtual void OnDialogueInterrupted(in OperationResult result)
+        private void OnDialogueInterrupted(in OperationResult result)
         {
         }
 
@@ -279,7 +279,7 @@ namespace Systems.SimpleDialogue.Components
             return null;
         }
 
-        internal void InitializeForTests(DialogueGraph graph, IDialogueRenderer renderer = null)
+        internal void InitializeForTests(DialogueGraph graph, [CanBeNull] IDialogueRenderer renderer = null)
         {
             Graph = graph;
             _viewContext = new DialogueViewContext(_options);
