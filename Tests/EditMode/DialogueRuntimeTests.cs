@@ -81,13 +81,36 @@ namespace Systems.SimpleDialogue.Tests
             secondNpc.Line = "Second line.";
             Connect(entry, nameof(DialogueEntryNode.next), firstNpc);
             Connect(firstNpc, nameof(NPCDialogueNode.next), secondNpc);
-            Dialogue dialogue = CreateDialogue(graph, new TestRenderer());
+            TestRenderer renderer = new();
+            Dialogue dialogue = CreateDialogue(graph, renderer);
             dialogue.BeginDialogue();
+            Assert.IsTrue(renderer.LastContext.CanAdvance);
 
             OperationResult result = dialogue.Advance();
 
             AssertSimilar(DialogueOperations.NodeEntered(), result);
             Assert.AreSame(secondNpc, dialogue.CurrentNode);
+        }
+
+        [Test]
+        public void CanAdvance_WhenNextNpcNodeIsUnavailable_ReturnsNodeUnavailable()
+        {
+            DialogueGraph graph = CreateGraph();
+            DialogueEntryNode entry = graph.AddNode<DialogueEntryNode>();
+            TestNpcNode firstNpc = graph.AddNode<TestNpcNode>();
+            TestNpcNode nextNpc = graph.AddNode<TestNpcNode>();
+            nextNpc.Available = false;
+            Connect(entry, nameof(DialogueEntryNode.next), firstNpc);
+            Connect(firstNpc, nameof(NPCDialogueNode.next), nextNpc);
+            TestRenderer renderer = new();
+            Dialogue dialogue = CreateDialogue(graph, renderer);
+            dialogue.BeginDialogue();
+            Assert.IsFalse(renderer.LastContext.CanAdvance);
+
+            OperationResult result = dialogue.CanAdvance();
+
+            AssertSimilar(DialogueOperations.NodeUnavailable(), result);
+            Assert.AreSame(firstNpc, dialogue.CurrentNode);
         }
 
         [Test]

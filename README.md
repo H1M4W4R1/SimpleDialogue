@@ -70,8 +70,13 @@ OperationResult result = DialogueAPI.Select(in option);
 For an NPC line without answer options, connect its `next` port to the following NPC node and call `Advance` after the player interacts:
 
 ```csharp
+OperationResult canAdvanceResult = dialogue.CanAdvance();
+if (!canAdvanceResult) return;
+
 OperationResult result = dialogue.Advance();
 ```
+
+Renderers receive the same state through `DialogueViewContext.CanAdvance`, allowing a continue prompt or button to be displayed only when the next NPC node can be entered.
 
 Only one dialogue may run at a time. Starting another dialogue while one is active returns `DialogueOperations.AnotherDialogueRunning()`.
 

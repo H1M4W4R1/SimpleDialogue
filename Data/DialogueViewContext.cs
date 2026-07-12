@@ -19,6 +19,10 @@ namespace Systems.SimpleDialogue.Data
         [NotNull] public string SpeakerName { get; private set; } = string.Empty;
         [NotNull] public string Text { get; private set; } = string.Empty;
         public bool IsRunning { get; private set; }
+        /// <summary>
+        ///     Whether the renderer can offer an interaction that advances to the current NPC node's next node.
+        /// </summary>
+        public bool CanAdvance { get; private set; }
         [NotNull] public DialogueOptionListContext OptionsContext { get; }
         [NotNull] public IReadOnlyList<DialogueOption> Options => _options;
 
@@ -34,7 +38,8 @@ namespace Systems.SimpleDialogue.Data
             [CanBeNull] DialogueInteractionNode currentNode,
             [CanBeNull] string speakerName,
             [CanBeNull] string text,
-            bool isRunning)
+            bool isRunning,
+            bool canAdvance)
         {
             Dialogue = dialogue;
             Graph = graph;
@@ -42,6 +47,7 @@ namespace Systems.SimpleDialogue.Data
             SpeakerName = ReferenceEquals(speakerName, null) ? string.Empty : speakerName;
             Text = ReferenceEquals(text, null) ? string.Empty : text;
             IsRunning = isRunning;
+            CanAdvance = canAdvance;
         }
     }
 }

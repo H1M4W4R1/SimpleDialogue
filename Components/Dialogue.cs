@@ -122,15 +122,36 @@ namespace Systems.SimpleDialogue.Components
             return EnterNode(nextNode, actionSource);
         }
 
-        public OperationResult Advance(ActionSource actionSource = ActionSource.External)
+        /// <summary>
+        ///     Verifies that the current NPC-only sequence can advance into its next node.
+        /// </summary>
+        public OperationResult CanAdvance(ActionSource actionSource = ActionSource.External)
         {
             if (!IsRunning) return DialogueOperations.DialogueNotRunning();
             if (_options.Count > 0) return DialogueOperations.OptionUnavailable();
             if (_currentNode is not NPCDialogueNode npcNode) return DialogueOperations.OptionNotFound();
 
             DialogueInteractionNode nextNode = npcNode.GetNextNode();
-            if (ReferenceEquals(nextNode, null)) return FinishDialogue(actionSource);
+            if (ReferenceEquals(nextNode, null)) return DialogueOperations.NodeIsNull();
 
+            DialogueOption emptyOption = default;
+            DialogueContext context = CreateContext(nextNode, in emptyOption, actionSource);
+            return nextNode.CanEnterInternal(in context);
+        }
+
+        public OperationResult Advance(ActionSource actionSource = ActionSource.External)
+        {
+            OperationResult canAdvanceResult = CanAdvance(actionSource);
+            if (!canAdvanceResult)
+            {
+                if (canAdvanceResult.resultCode == DialogueOperations.ERROR_NODE_IS_NULL)
+                    return FinishDialogue(actionSource);
+
+                return canAdvanceResult;
+            }
+
+            NPCDialogueNode npcNode = (NPCDialogueNode) _currentNode;
+            DialogueInteractionNode nextNode = npcNode.GetNextNode();
             DialogueOption emptyOption = default;
             DialogueContext context = CreateContext(nextNode, in emptyOption, actionSource);
             OperationResult advancedResult = DialogueOperations.NodeEntered();
@@ -207,7 +228,8 @@ namespace Systems.SimpleDialogue.Components
                 text = _currentNode.GetText(in context);
             }
 
-            _viewContext.Set(this, _currentGraph, _currentNode, speakerName, text, IsRunning);
+            OperationResult canAdvanceResult = CanAdvance(actionSource);
+            _viewContext.Set(this, _currentGraph, _currentNode, speakerName, text, IsRunning, canAdvanceResult);
             RenderCurrentState();
         }
 
@@ -264,7 +286,7 @@ namespace Systems.SimpleDialogue.Components
             _options.Clear();
             _currentNode = null;
             _currentGraph = null;
-            _viewContext.Set(this, null, null, string.Empty, string.Empty, false);
+            _viewContext.Set(this, null, null, string.Empty, string.Empty, false, false);
         }
 
         private bool IsAnotherDialogueRunning()

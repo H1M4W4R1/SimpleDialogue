@@ -39,5 +39,19 @@ namespace Systems.SimpleDialogue.Utility
         {
             return dialogue.InterruptDialogue(actionSource);
         }
+
+        public static OperationResult CanAdvance(
+            [NotNull] Dialogue dialogue,
+            ActionSource actionSource = ActionSource.External)
+        {
+            return dialogue.CanAdvance(actionSource);
+        }
+
+        public static OperationResult Advance(
+            [NotNull] Dialogue dialogue,
+            ActionSource actionSource = ActionSource.External)
+        {
+            return dialogue.Advance(actionSource);
+        }
     }
 }
