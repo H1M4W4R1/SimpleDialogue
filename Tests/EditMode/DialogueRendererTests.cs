@@ -10,7 +10,7 @@ namespace Systems.SimpleDialogue.Tests
         [Test]
         public void ClearOptions_WhenContainerHasOptions_ProvidesEmptyContext()
         {
-            GameObject gameObject = new GameObject("Answer Container");
+            GameObject gameObject = new GameObject("Answer Container", typeof(RectTransform), typeof(Canvas));
             try
             {
                 SimpleDialogueAnswerContainer container = gameObject.AddComponent<SimpleDialogueAnswerContainer>();
