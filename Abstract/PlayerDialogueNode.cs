@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using XNode;
 
 namespace Systems.SimpleDialogue.Abstract
@@ -11,7 +12,7 @@ namespace Systems.SimpleDialogue.Abstract
         [Output(ShowBackingValue.Never, ConnectionType.Override, TypeConstraint.Strict)]
         public DialogueConnection next;
 
-        public DialogueInteractionNode GetNextNode()
+        [CanBeNull] public DialogueInteractionNode GetNextNode()
         {
             NodePort port = GetOutputPort(nameof(next));
             if (ReferenceEquals(port, null)) return null;

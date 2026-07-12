@@ -69,7 +69,7 @@ MonoBehaviour:
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       connections:
       - fieldName: input
-        node: {fileID: -2297381375330275016}
+        node: {fileID: 143119437541908325}
         reroutePoints: []
       _direction: 1
       _connectionType: 0
@@ -114,7 +114,7 @@ MonoBehaviour:
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       connections:
       - fieldName: input
-        node: {fileID: -2297381375330275016}
+        node: {fileID: 143119437541908325}
         reroutePoints: []
       _direction: 1
       _connectionType: 0
@@ -147,7 +147,7 @@ MonoBehaviour:
   m_Name: Dialogue Exit
   m_EditorClassIdentifier: SimpleDialogue::Systems.SimpleDialogue.Implementations.DialogueExitNode
   graph: {fileID: 11400000}
-  position: {x: 792, y: 72}
+  position: {x: 1064, y: 40}
   ports:
     keys:
     - input
@@ -157,11 +157,8 @@ MonoBehaviour:
       _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       connections:
-      - fieldName: answers
-        node: {fileID: -6401454082097923717}
-        reroutePoints: []
-      - fieldName: answers
-        node: {fileID: -5014905649377732419}
+      - fieldName: next
+        node: {fileID: 143119437541908325}
         reroutePoints: []
       _direction: 0
       _connectionType: 0
@@ -279,6 +276,54 @@ MonoBehaviour:
   - {fileID: -6401454082097923717}
   - {fileID: -5014905649377732419}
   - {fileID: -2297381375330275016}
+  - {fileID: 143119437541908325}
+--- !u!114 &143119437541908325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df0e9804223d46069cf7a55865a3f014, type: 3}
+  m_Name: Simple Player Dialogue
+  m_EditorClassIdentifier: SimpleDialogue::Systems.SimpleDialogue.Implementations.SimplePlayerDialogueNode
+  graph: {fileID: 11400000}
+  position: {x: 744, y: 40}
+  ports:
+    keys:
+    - next
+    - input
+    values:
+    - _fieldName: next
+      _node: {fileID: 143119437541908325}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections:
+      - fieldName: input
+        node: {fileID: -2297381375330275016}
+        reroutePoints: []
+      _direction: 1
+      _connectionType: 1
+      _typeConstraint: 2
+      _dynamic: 0
+    - _fieldName: input
+      _node: {fileID: 143119437541908325}
+      _typeQualifiedName: Systems.SimpleDialogue.Abstract.DialogueConnection, SimpleDialogue,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      connections:
+      - fieldName: answers
+        node: {fileID: -6401454082097923717}
+        reroutePoints: []
+      - fieldName: answers
+        node: {fileID: -5014905649377732419}
+        reroutePoints: []
+      _direction: 0
+      _connectionType: 0
+      _typeConstraint: 2
+      _dynamic: 0
+  _text: Bye!
 --- !u!114 &2966936861852567466
 MonoBehaviour:
   m_ObjectHideFlags: 0

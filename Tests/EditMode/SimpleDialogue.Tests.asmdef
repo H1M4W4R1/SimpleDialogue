@@ -4,6 +4,7 @@
     "references": [
         "SimpleCore",
         "SimpleDialogue",
+        "SimpleUserInterface",
         "UnityEngine.TestRunner",
         "XNode"
     ],

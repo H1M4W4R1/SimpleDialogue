@@ -28,6 +28,7 @@ namespace Systems.SimpleDialogue.UI
         {
             _speakerText.SetText(string.Empty);
             _bodyText.SetText(string.Empty);
+            _answerContainer.ClearOptions();
             if (IsVisible) Hide();
         }
 

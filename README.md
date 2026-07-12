@@ -91,3 +91,9 @@ The package includes `SimpleVisualNovelDialogueRenderer`, a bottom-of-screen Sim
 - `SimpleDialogueAnswerOption` for answer buttons.
 
 This renderer is intentionally just one implementation. You can replace it with a typewriter renderer, radial answers, subtitle-only renderer, or any other `IDialogueRenderer`.
+
+## Examples
+
+Open `Examples/Scene - Dialogue.unity` and enter Play Mode to run the included `Examples/Dialogue Graph.asset`.
+
+The scene uses the built-in SimpleUI visual novel renderer. `DialogueExampleStarter` begins the dialogue automatically, and the answer buttons advance through the graph.

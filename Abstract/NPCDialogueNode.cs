@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using XNode;
 
 namespace Systems.SimpleDialogue.Abstract
@@ -20,7 +21,7 @@ namespace Systems.SimpleDialogue.Abstract
             }
         }
 
-        public PlayerDialogueNode GetAnswerNode(int index)
+        [CanBeNull] public PlayerDialogueNode GetAnswerNode(int index)
         {
             NodePort port = GetOutputPort(nameof(answers));
             if (ReferenceEquals(port, null)) return null;
